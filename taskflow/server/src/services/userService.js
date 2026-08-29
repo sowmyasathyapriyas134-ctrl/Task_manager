@@ -1,63 +1,31 @@
-// src/services/userService.js
-// Handles all database queries related to User records and JOIN aggregations
+// server/src/services/userService.js
 
 const { PrismaClient } = require("@prisma/client");
+
 const prisma = new PrismaClient();
 
-// ─── Get All Users ────────────────────────────────────────────────────────────
-async function getAllUsers() {
-  const users = await prisma.user.findMany({
-    orderBy: { name: "asc" },
-  });
-  return users;
-}
-
-// ─── Get User By ID ───────────────────────────────────────────────────────────
-async function getUserById(id) {
-  const user = await prisma.user.findUnique({
-    where: { id },
-    include: {
-      tasks: true,
-    },
-  });
-  return user;
-}
-
-// ─── SQL JOIN + GROUP BY + COUNT Aggregation ──────────────────────────────────
-// Endpoint: GET /api/users/task-count
-// Conceptual SQL:
-//   SELECT users.id, users.name, COUNT(tasks.id) AS task_count
-//   FROM "User" users
-//   LEFT JOIN "Task" tasks ON users.id = tasks."userId"
-//   GROUP BY users.id, users.name
-//   ORDER BY task_count DESC;
+/*
+ * Get the number of tasks assigned to each user.
+ *
+ * LEFT JOIN is important here because we want
+ * ALL users to appear, even users with zero tasks.
+ */
 async function getUserTaskCounts() {
-  const usersWithCounts = await prisma.user.findMany({
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      _count: {
-        select: { tasks: true },
-      },
-    },
-    orderBy: [
-      { tasks: { _count: "desc" } },
-      { name: "asc" },
-    ],
-  });
+  const result = await prisma.$queryRaw`
+    SELECT
+      u.id,
+      u.name,
+      COUNT(t.id)::int AS task_count
+    FROM "User" u
+    LEFT JOIN "Task" t
+      ON u.id = t."userId"
+    GROUP BY u.id, u.name
+    ORDER BY task_count DESC;
+  `;
 
-  // Map to flat structure matching the requested spec: [{ name, task_count, email, id }]
-  return usersWithCounts.map((u) => ({
-    id: u.id,
-    name: u.name,
-    email: u.email,
-    task_count: u._count.tasks,
-  }));
+  return result;
 }
 
 module.exports = {
-  getAllUsers,
-  getUserById,
-  getUserTaskCounts,
+  getUserTaskCounts
 };

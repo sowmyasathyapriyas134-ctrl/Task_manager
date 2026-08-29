@@ -526,4 +526,100 @@ console.log("End");`}
   );
 }
 
+// client/src/pages/JavaScriptLab.jsx
+
+import React, { useState } from "react";
+
+function JavaScriptLab() {
+  const [promiseOutput, setPromiseOutput] = useState([]);
+
+  function runPromiseChain() {
+    setPromiseOutput(["Starting Promise chain..."]);
+
+    Promise.resolve("Task received")
+      .then((result) => {
+        setPromiseOutput((prev) => [
+          ...prev,
+          `Step 1: ${result}`
+        ]);
+
+        return `${result} → validated`;
+      })
+      .then((result) => {
+        setPromiseOutput((prev) => [
+          ...prev,
+          `Step 2: ${result}`
+        ]);
+
+        return `${result} → processed`;
+      })
+      .then((result) => {
+        setPromiseOutput((prev) => [
+          ...prev,
+          `Step 3: ${result}`
+        ]);
+
+        return result;
+      })
+      .catch((error) => {
+        setPromiseOutput((prev) => [
+          ...prev,
+          `Error: ${error.message}`
+        ]);
+      });
+  }
+
+
+  function runPromiseError() {
+    setPromiseOutput(["Starting error demonstration..."]);
+
+    Promise.resolve("Starting operation")
+      .then((result) => {
+        setPromiseOutput((prev) => [
+          ...prev,
+          result
+        ]);
+
+        throw new Error("Something went wrong!");
+      })
+      .then((result) => {
+        setPromiseOutput((prev) => [
+          ...prev,
+          result
+        ]);
+      })
+      .catch((error) => {
+        setPromiseOutput((prev) => [
+          ...prev,
+          `Caught error: ${error.message}`
+        ]);
+      });
+  }
+
+
+  return (
+    <div>
+      <h1>JavaScript Lab</h1>
+
+      <section>
+        <h2>Promises & Error Propagation</h2>
+
+        <button onClick={runPromiseChain}>
+          Run Promise Chain
+        </button>
+
+        <button onClick={runPromiseError}>
+          Run Error Example
+        </button>
+
+        <div>
+          {promiseOutput.map((message, index) => (
+            <p key={index}>{message}</p>
+          ))}
+        </div>
+      </section>
+    </div>
+  );
+}
+
 export default JavaScriptLab;
